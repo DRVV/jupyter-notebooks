@@ -1,0 +1,167 @@
+[INCLUDE=chap6-3.mdk]
+
+~MathDefs
+\newcommand{\inputspace}{\mathcal{D}}
+~
+
+~ Begin Vertical
+# Gaussian Process
+Definition:  a probability distribution over functions $y$ s.t. the arbitrary set of values of $y(x)$ jointly have a Gaussian distribution.
+
+Frankly put, "any slices of Gaussian process is Gaussian distributed".
+
+
+
+## \* Stochastic process
+
+In general, *stochastic process* is specified by the joint probability distribution for any finite set of evaluations $\curly{y(x_i)}_{i=0}^N$
+
+e.g. *Poisson process* is a distribution any slices of which are Poisson distributed.
+
+~ End Vertical
+
+## What we did in Chap. 3
+
+For a set of fixed feature maps, or *function basis*, $\{\phi_i: \inputspace \to \featurespace \}$, we
+
+1. considered linear models $y (x, w) = \innerprod{w}{\phi(x)}$
+
+2. introduced prior/posterior distributions over the parameter $w$
+
+3. evaluated prior/posterior distributions over *regression function* $y$ from data
+
+## What we do in Chap. 6
+
+* "non-parametric"
+
+* *directly* consider distributions over regression function
+
+"Distribution over functions" will lead to uncountable infinity.  Is this OK?
+
+Don't worry!  We can handle it by focusing on finite set of training data points $\{ (x_n, t_n) \}_{n=1}^N$.
+
+## Models equivalent to Gaussian Processes
+Widely studied in various area:
+
+* kriging in geostatics
+
+* ARMA, Kalman filters, radial basis function network
+
+# Linear regression revisited
+
+Linear regression model motivates the Gaussian process viewpoint.  The key point here is 
+
+* Re-deriving the predictive distribution *by working in terms of distributions over functions* $y$.
+
+Recall, in Bayesian setup, our goal is to find *predictive distribution* of the next input, as a result of the learning.  That is $p(t_{n+1} \given \mathcal{D})$.
+
+## Disadvantages
+
+Gaussian process methods can become infeasible for *large training data sets*.
+
+Therefore a range of *approximation* schemes are developed.
+
+See [Bishop, Nabney 2008] for more.
+
+## Extension to multiple targets
+
+Possible; known as **co-kriging**.
+
+
+# Learning the hyperparameters
+
+You need to choose covariance function $K$ to make predictions.  How do you determine $K$?
+
+Use *parametric* approach (as always!), and reduce the problem to optimisation.
+
+~ Vertical
+
+## Related Topics
+
+## Parametric approach
+
+Consider parametric family of covariance matrix.
+
+~~Equation
+C = C(\theta)
+~~
+
+Then *learn* the parameter $\theta$ from data, considering likelihood $p(\mathbf{t} \given \mathbf{\theta}$.
+
+We are already favourite with this type of problem!  The strategies are
+
+1. *Point estimate*; by maximizing log likelihood
+
+2. Bayesian treatment; by introducing the prior distribution $p(\theta)$
+
+Great!  But we still have room to think:
+
+1. Fully Bayesian;  maximize (log) posterior $p(\mathbf{t}) = \int p(\mathbf{t}\given \theta) p(\theta)$
+
+2. Use approximations (as we did in Chap. 3)
+
+## Heteroscedastic problem
+
+### Etymology
+
+* hetero = different
+
+* scedasitc = σκεδαστός (able to be scattered, scatter-able)
+
+Parameter $\beta$ governs the noise to our problem.  It is asumed to be constant.
+
+But life is complex; not all the problems satifies this assumption.  In other words some problem is *heteroscedastic*;  $\beta$ depends on the input $x$.
+
+~~ Equation
+\beta = \beta(x)
+~~
+
+## Classical example:  income vs expenditure on meals
+
+* Poorer people buy on inexpensive food *constantly*
+
+* Richer people buy *variety* of food; usually spend less, but sometimes spend more
+
+~~center
+![heteroscedastic]
+~~
+[heteroscedastic]: images/Heteroscedasticity.png "from Wikipedia"
+~
+
+~ Vertical
+## Automatic Relevance Detection
+
+Consider the following kernel for Gaussian process in two dimension $x = (x_1, x_2)$
+
+~~ Equation
+\begin{aligned}
+k(x,x') &= \theta_0 \exp \lbrack \eta_1 (x_1 - x_1')^2 + \eta_2 (x_2 - x_2')^2  \rbrack \\
+ &= \theta_0 \exp \lbrack (x - x')\transpose
+ \begin{bmatrix}
+ \eta_1 & 0 \\
+ 0 & \eta_2
+ \end{bmatrix} (x-x') \rbrack
+\end{aligned}
+~~
+
+Look at the samples for different value of $(\eta_1, \eta_2) = (1, 1) , (1, 0.01)$.
+
+
+~~Slide
+
+~~~ center
+![ardfigure]
+~~~
+
+The right figure shows the value only changes gently in the second direction.
+In other words, the second component *is not relevant* to the target value; it *does not work as a predictor* very much.
+
+Btw, the parameter can be learnt from data.  This means you can have your data tell you the relevance.  Hence "automatic".
+
+[ardfigure]: images/ard.png "from PRML p312, Figure 6.9"
+
+~~
+~
+# Gaussian processes for classification
+
+## 
