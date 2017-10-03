@@ -1,0 +1,358 @@
+<!-- [INCLUDE=presentation] -->
+
+Title         : Sutton \& Barto *Reinforcement Learning*
+Sub Title     : Chapter 2, Bandit Problems
+Author        : Naoki Shimode
+Affiliation   : 
+Email         : naoki.shimode.dp@
+Reveal Theme  : serif
+Beamer Theme  : singapore
+
+~ MathDefs
+[INCLUDE=drwMacro.sty]
+\newcommand{\astar}{*}
+\newcommand{\argmax}{\text{argmax}}
+~
+
+
+[TITLE]
+
+# Agenda
+
+[TOC]
+
+# Distinctive feature of Reinforcement Learning (RL)
+
+RLが他の学習algorithmと際立って違う点は，training informationとしてactionの**評価**をとる点．
+
+RL uses training information that *evaluates* the actions taken.
+
+~ Vertical
+## Evaluation v. Instruction
+
+agentが得るfeedbackには二種類ある．すなわち，evaluativeなものとinstructiveなものである．
+
+* Evaluative feedback:
+  採った行動がどの程度*良かった*かのfeedback
+  
+  * 採った行動に**依存する**
+  * function optimisation (incl. evolutionary methods)
+  
+* Instructive feedback:
+  採るべき*正しい*行動のfeedback
+  the *correct* action to take
+  
+  * **independent** of the action taken
+  * basis of supervised learning 
+
+There are also intermediate cases where *two feedbacks blend* together.
+
+## Evolutionary methods
+とは？
+
+Genetic algorithmとかのこと？
+
+~
+
+## what we cover here 
+
+この章では，次のようなtaskを考える．
+
+* feedbackは純粋にevaluativeなtask
+* non-associativeなtask
+
+ここでnon-associativityとは，agentのsituationが単一であることを言う．
+
+端的な具体例として[**n-armed bandit problem**][banditprob]を取り上げる．
+
+[banditprob]: https://en.wikipedia.org/wiki/Multi-armed_bandit
+
+# An n-Armed Bandit Problem
+問題設定は以下の通り．
+
+time step $t$において，agentは
+
+* $n$個の可能な行動の中から，一つを選択する -> $a_t$
+
+* その*行動に基づき*，reward $r_t$を一定の確率分布から得る
+
+agentの目的は，**一定期間におけるtotal rewardsの最大化**である．
+
+注：いつまでのrewardを最大化したいか？　で問題が分かれる．infinite/finite horizon problem．
+
+注：この本では，$n$-armed Bandit problemと言えば上記の単純なもののことを指すが，より一般的なものを指す場合もある．
+
+## Value of actions
+
+設定上，rewardは確率的に変動する．（Bayesian，あるいは広く主観確率の立場では，どのrewardが得られるかについて，知識がない）
+
+なので，目標は，あるactionをとったとき，得られるrewardの平均・期待値を最大化することになる．この値をactionの**value**と呼ぶ．
+
+もしagentが全actionの（真の）valueを知っている場合は，valueが最大なactionを選び続ければ目的が達成される．
+
+従って我々は真のvalueについては*知らない*という前提で議論する．
+
+注：何が推定量で，何が真の値か区別をつけておくことが重要になりそう．
+
+agentの経験を通してvalueのestimate（見積）をしていく方法を議論する．
+どうやってvalueを見積もるか，が中心的な話題のひとつとなる．
+
+# Action-Value Methods
+
+action $a$の真のvalue，すなわちmean rewardを$q_\astar(a)$とする．我々はこれを推定したい．agentがtime step $t$において推定したaction $a$のvalueを$Q_t(a)$と書くことにする．
+
+推定量なのか，真の値なのかは常に意識しておく方がよさそう．
+
+## Sample-average method
+agentがtime step $t$以前に実際に得たrewardの**算術平均(sample mean)**をestimated valueとするのは自然である．
+
+time step $t$以前に，action $a$を実行した回数を$K_a$，それぞれのaction $a$において得たrewardの系列を$R_1, \dots, R_{K_a}$とすると，rewardの算術平均は
+
+~~Equation
+Q_t(a) = \frac{R_1 + \dots + R_{K_a}}{K_a}.
+~~
+
+大数の法則(law of large number)により，$K_a \to \infty$で真の値$q_\astar(a)$に収束することは保証されている．
+
+当然，もっとsophisticatedなmethodはある．が，ここでは話を進めて，valueがestimateできた際にどのようにactionをするかの指針(policy)を決定するruleの話題に移ることにする．
+
+## greedy methods
+time step $t$において選択するactionを$A_t^\astar$とする．
+
+もっとも単純には，その時点でのvalueのestimates $\curly{ Q_t(a_1), \dots, Q_t(a_n) }$の中で最大なものを選択するruleが考えられる．
+
+~~Equation
+A_t^\astar = \argmax_a Q_t(a)
+~~
+
+特徴：
+
+* この行動規範(policy)では，どの時点$t$においても，直後のtime step $t+1$に得られるrewardを最大化するようなものになっている．
+
+* 任意の時点での知識を最大限に搾取(exploit)する．探索(explore)はしない．
+
+<!-- 注：policyを「政策」と訳すのは知性が感じらない．せめて「方策」だろう． -->
+
+## $\epsilon$-greedy methods
+
+greedy methodに少しexplore要素を入れることを考える．
+
+「確率$\epsilon$で，*valueのestimateとは無関係に*次のactionを等確率で選択する」という行動規範を考える．
+
+time step $t$において，行動$a$が選ばれる確率を$\prob{A_t^\astar = a}$と書くことにすると，
+~~Equation
+\prob{A_t^\astar = a} = \begin{cases} 1 - \epsilon &\text{ if } a = \argmax_a{ Q_t(a)}\\[10pt]
+ \displaystyle\frac{\epsilon}{n} &\text{ if } a \neq \argmax_a {Q_t(a)}\end{cases}
+~~
+
+これを$\epsilon$-greedy methodと呼ぶ．
+
+特徴：
+
+* $\forall a \ K_a \to \infty$では，すべてのvalue estimate$Q_t(a)$が真の$q_\astar(a)$に収束する
+
+* $\forall a \ K_a \to \infty$では，rewardを最大化する行動が$1-\epsilon$の確率で選択される
+
+注意：一見良い感じに見えるが，漸近的にそうなるだけで，実用上の効果的かどうかの話はしていない．
+
+## 10-armed testbed
+
+greedy, $\epsilon$-greedy methodsを比較してみよう．比較するのは，
+
+$\epsilon$を変えて比較してみる．
+
+# Softmax Action Selection
+$\epsilon$-greedyでは$\epsilon$の確率で全行動が等確率で選ばれる．exploitationとexplorationのbalanceのさせ方としてはpopularではあるが，確率$\epsilon$で*今までの経験を完全に無視する*行動をとるのは流石にやりすぎでは？　（全く価値のない行動と，少し悪い行動とが等確率で選ばれてしまう．）
+
+ということで，action-valueが高いものが優先的に選ばれる$softmax$ functionをselection ruleにするpolicyの話．
+
+~~Equation
+\prob{A_t^\astar = a} = \frac{e^{Q_t(a) / \tau}}{\displaystyle\sum_{i=1}^n e^{Q_t(a_i) / \tau}}.
+~~
+
+ここで$\tau$は*温度パラメタ*と呼ばれている．
+
+註：物理では統計力学でBoltzman weightなどと呼ばれている．温度$T$の熱浴と接触して熱平衡に達した系のenergy $E$分布は$p_\nu \sim e^{-\frac{E_\nu}{T}}.$
+
+
+## softmax v. $\epsilon$-greedy?
+
+softmaxと$\epsilon$-greedyでは「どちらが良いか？」という問いの答えは，「場合による」（らしい）
+
+どちらもfree paramter はひとつだが，$\epsilon$の方が感覚的に決めやすい．
+
+比較に関するcareful studyは知られていない（らしい）
+
+## softmax action selection rule in recent years
+
+最近はsoftmax action selectionはあまり価値が高くないと思われている(disparaged)．理由は，温度パラメタの選択が難しい．実際に設定するには，action valueについての知識がないといいものを選べない．
+
+たとえば，温度パラメタの単位とaction valueの単位は違う．action valueの単位はrewardの単位．温度パラメタは*どこまで深く低い価値のactionまで考慮するか*を制御するパラメタだが，rewardの単位とどう関係しているか判断する必要は別にある．
+
+ただしpolicy-based RLの問題で再びsoftmax関数の話題が出てくる．乞うご期待．
+
+# Incremental Implementation
+
+Action valueのestimationをsample meanでやる方針をnaiveに実装すると，今まで得られたrewardの系列$$\curly{R_1, \dots}$をすべて覚えておくことになる．
+
+しかし，それだとmemoryにも優しくない（time stepごとに増加する）し，計算コストも多い．
+
+当然だがそんな方法よりいい方法はある．*incremental implementation*
+
+あるaction $a$に対して，$k$番目のaction value estimateを$Q_k$，$k$回目に得られたrewardを$R_k$とすると，$k+1$番目のaction value estimate $Q_{k+1}$は，これらを使って表せる：
+
+~~Equation
+\begin{aligned}
+Q_{k+1} &= \frac{1}{k} \sum_i^k R_i\\
+&=  \frac{1}{k} \paren{R_k +\sum_{i=1}^{\textcolor{red}{k-1}} R_i}\\
+&=  \frac{1}{k} \paren{R_k +\textcolor{red}{(k-1) Q_k}}\\
+&=  Q_k + \frac{1}{k} \paren{R_k - Q_k}
+\end{aligned}
+~~
+
+註：最後の行の変形はヤラセ臭いが，今後この形がよくでてくるので実際安心です．
+
+結局，新しいestimateを得るためには現在のestimate$Q_k$と，何回目のestimateか$k$を知っていればもとまるということ．
+
+上式は，次のようなより一般的な枠組みの中で捉えることができる．
+
+~~Equation
+NewEstimate  =  OldEstimate + StepSize \sqbra{Target - OldEstimate}
+~~
+
+$Target - OldEstimate$はestimationの*error*である．”$Target$"に近づくにつれ減ってくる．
+一般的には$Target$は「次にどの方向に進むか」を指し示すものと解釈される．今回の場合は$k$回目のrewardが$Target$.
+
+註：当然ながらrewardとrewardの期待値は違う．大数の法則によって保証されるのは期待値の収束であって，期待値の値をrewardが取りうるかは別問題である．例：公平コイン投げ．いくらコインを投げても$1/2$という値は得られない．
+
+$StepSize$は回数ごとに変化していることに注目．この本では，一般にstep size parameter $\alpha_t(a)$として表現される．action $a$にも依存しうることを忘れてはいけない．
+
+# Tracking a Nonstationary Problem
+
+上でやってきたaveraging methodsは"stationary environment"（定常的環境）では適しているが，環境が非定常的（たとえばbanditが時間とともに変わる）状況では適していない．
+
+そういう状況下では，long-term rewardが容易に変わってしまうので，exploitを心がけるのが重要．つまり，recent rewardの価値を重く見るべきである．
+
+One of the most popular wayはstep-size parameterとしてconstantなものを選ぶものである．
+
+たとえば，先ほどの$\frac{1}{k}$をconstant $0 <\alpha \leq 1$に置き換えてみよう：
+
+~~Equation
+Q_{k+1} = Q_k + \textcolor{red}{\alpha} \sqbra{R_k - Q_k} \quad \paren{k=1, \dots }
+~~
+
+この漸化式は$Q$について解けて
+
+~~Equation
+\begin{aligned}
+Q_{k+1} &= Q_k + \alpha \sqbra{R_k - Q_k} \quad \paren{k=1, \dots }\\
+&= (1-\alpha)Q_k + \alpha R_k\\
+&= (1-\alpha)\textcolor{red}{\paren{\paren{1-\alpha}Q_{k-1} + \alpha R_{k-1}} }+ \alpha R_k\\
+&= (1-\alpha)^2 Q_{k-1} + \paren{1-\alpha}\alpha R_{k-1} + \alpha R_k\\
+&= \dots\\
+&= (1-\alpha)^{k-1} Q_{1} +  \sum_{i=0}^{k-1}\paren{1-\alpha}^i \alpha R_{k-i}\\
+&= (1-\alpha)^{k-1} Q_{1} +  \sum_{i=1}^{k}\paren{1-\alpha}^{k-i} \alpha R_{i}.
+\end{aligned}
+~~
+ところで
+$
+\displaystyle\sum_{i=0}^{k-1}\paren{1-\alpha}^i = \frac{1 - \paren{1-\alpha}^k}{1 - \paren{1-\alpha} } = \frac{1- \paren{1-\alpha}^k}{/\alpha}
+$
+より，$Q_1, R_1, \dots, R_k$の係数の和が
+~~Equation
+\paren{1-\alpha}^k + \sum_{i=1}^{k}\paren{1-\alpha}^{k-i} = 1
+~~
+となっていることに注目する．
+
+すると$\alpha = \text{const.}とした処方は，「$i$番目のrewardを$\alpha \paren{1-\alpha}^{k-i}$分の**weight**を与えている」ことになっている．これは**exponential average**とか，**recency-weighted average**とか呼ばれている．
+
+## StepSize parameter and convergence guarantee
+
+sample meanを用いる方法，すなわち$StepSize$を$\alpha = \frac{1}{k}$とする方法では，大数の法則によりestimate $Q_t(a)$が真のvalue$q_\astar(a)$に収束することが保証されている．
+
+一般に$StepSize$ $\alpha_t{a}$は次の条件を満たしていると，真の平均への収束が保証されている．
+
+~~Equation
+\sum_k^\infty \alpha_k = \infty, \quad \sum_k^\infty \alpha^2_k < \infty.
+~~
+
+* 当然ながら$\alpha = \frac{1}{k}$はこの条件を満たしている．一番目はlog発散，二番目はRiemann zeta $\zeta(2) = \frac{\pi^2}{6}$.
+
+* 当然ながら$\alpha = \text{const.}$はこの条件を満たさない．二番目も発散する．
+
+一方，
+
+* $\alpha = \text{const.}$はnon-stationaryな環境においては，*むしろ望ましい性質*となる
+
+* 収束保証条件が満たされている$\alpha$を選ぶと，真の値への収束が遅くなってしまう実用上の問題がある．なので，theoretical workにはよく使われるが，applicationやempirical reserachにはほとんど使われない
+
+# Optimistic Initial Values
+
+今まで見てきた方法では，最初のaction-value estimate $Q_1(a)$，すなわち*bias*に影響を受ける．
+
+* sample meanでは，biasの影響はすべてのactionが最低一回ずつ選ばれれば減っていく．
+
+* exponential averageでは，biasの影響は残りがち（time stepとともに減ってはいく．）
+
+## bias, pros and cons
+
+bias依存性は実用上は特に問題にならない．biasはuserが選ばなければならないパラメタになってはしまう点において難点とも思えるが，むしろ利点がもある．
+
+* rewardに関する事前知識を反映しやすい
+
+* exploreをencourageすることに繋がる
+    例：真のvalue$q_\astar(a)$は$0$ mean, unit varianceのGaussianだが，$Q_1(a) = +5 (\forall a)$と*optimistic*に与えておく．
+	すると，どの行動を選んでも得られるrewardは$+5$より低くなる．すると他のactionを選びに行くことになる．つまりexploratonが誘起されている．
+
+# Associative Search (Contextual Bandits)
+
+いままでsituationが単一なnon-associative taskを考えてきたが，RLで一般に扱うのはassociative，複数のsituationがある場合．その時はagentの行動規範(policy)は非自明で，むしろ*それを学習すること*がRLのgoalである．
+
+## Contextual Bandits
+
+最も単純な拡張は，「$n$ Bandit problemが時間とともにrandomに違う$n$ Banditになる」こと．つまり，agentはどの$n$ Banditかわからない状態で$n$ Bandit problemを解く．
+
+流石にこれだと難しいが，どのBanditかを示すclueは与えられる状況（たとえばslot machineにランプが付いている）でどのような行動をとればよいかを決定する問題もある．(**associative search** task)
+
+full RL problemと比較して，
+
+* policyを学習することもscopeに入っている点ではfull RLと同じ
+
+ただし
+
+* actionによって影響が出るのはrewardのみで，situation自体には影響を与えない点ではfull RLとは異なる
+
+とるactionによってagentが置かれる*situationも変わる*場合，full RL problemになる．次の章からはこの問題を扱っていく．
+
+# Conclusion
+
+* presented some simple ways of balancing exploration and explitation.
+$\epsilon$-greedy，softmaxなどを見てきた．単純に見えるものの，state of the artといってよい．
+もっと洗練された方法はあるが， RLの問題設定では複雑で仮定が多いせいで実用に耐えない．
+
+* explorationとexploitationのbalancingの問題に関してはもっと洗練されて満足のいく方法がある．実用上usefulとは言えないが，紹介する．
+
+## Estimates of uncertainty
+
+action-valueが近くともそれぞれのuncertaintyは違う場合がある．たとえば，片方のactionは十分な回数選択されているためvalueは真値に近いと考えられるが，もう一方のactionはほとんど試されていない，とか．するとuncertainなactionの方を選ぼう，というpolicyがあり得る．
+
+これを進めていくと，**Interval estimation methods**なる方法になる．ざっくり言うと，action-valueをバシッと推定するのではなく，confidence levelをestimateする方法．しかし現実は厳しく，confidence levelを決めるのは難しいそうな．
+
+それでも，これに類する発想では**Upper Confidence Bound (UCB)**という方法はうまくいっているらしい．
+
+## Bayesian
+
+Bayes流でexplorationとexploitationをbalanceさせる方法もある．（が，厳密計算はintractableで，近似する必要あり．）
+
+* 真のaction-valueがわからないので，action-valueは$Q$である(事前)確率を考える
+
+* actionを選ぶことでaction-valueの事後確率が得られる
+
+といういつものmove.
+
+なお，単純にやるには厳しいらしく，現在研究されている分野でもあってこの本ではout of scope.
+
+
+
+
+

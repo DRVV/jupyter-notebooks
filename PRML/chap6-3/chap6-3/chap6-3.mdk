@@ -1,0 +1,45 @@
+Title         : Notes on PRML
+Sub Title     : Chap. 6 Kernel methods
+Author        : Naoki Shimode
+Logo          : True
+
+[TITLE]
+
+[TOC]
+
+# Radial Basis Function Networks
+
+Chap. 3では、固定された基底$\{ \phi_i \}_{i=0}^{M}$について議論してきたが、
+どのような基底を選ぶかについてはあまり言及してこなかった。
+この章では、基底としてinput spaceの距離に*のみ*に依存した関数を用いた場合の議論をする。
+
+
+## Definition
+**定義は大事。**
+
+input space $\mathcal{D}$はノルム付き空間とする。基底関数$\{ \phi \}_{i=0}^{M}$のうち、すべての$i$について
+input spaceのノルムの写像となっているものを
+Radial Basis Function (RBF)と呼ぶ。[^fn]
+
+[^fn]: Radial Basis Function *Network*はRBFをactivation functionに使ったneural networkのこと。なおこの章ではNNの話は出てこない。謎。
+
+## Motivations
+どういう文脈でRBFが出てきたか？　二つある。
+
+### Interpolation 
+与えられたデータ点(training data)を必ず通るような関数を推定したい。
+
+
+# Kernel density estimations for regression 
+
+## Nadaraya-Watson model
+Alias: kernel regression
+
+### Motivation
+
+1. exact interpolation
+
+2. kernel density estimation
+
+### 
+
